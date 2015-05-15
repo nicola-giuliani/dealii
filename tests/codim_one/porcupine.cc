@@ -89,7 +89,6 @@ int main ()
     std::cout<<euler_vec.size()<<" "<<map_dh.n_dofs()<<std::endl;
     VectorTools::get_position_vector(map_dh,euler_vec);
     if(cycle == 0)
-      // mapping = new MappingQ<dim, dim+1>(degree);
       mapping = new MappingFEField<dim, dim+1>(map_dh,euler_vec);
 
     if(cycle != n_cycles-1)
