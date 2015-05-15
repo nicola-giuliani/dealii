@@ -70,6 +70,8 @@ MappingFEField<dim,spacedim,VECTOR,DH>::MappingFEField (const DH      &euler_dof
   euler_vector(&euler_vector),
   fe(&euler_dof_handler.get_fe()),
   euler_dof_handler(&euler_dof_handler),
+  local_dofs(std::vector<double>(fe->dofs_per_cell)),
+  dof_indices(std::vector<types::global_dof_index>(fe->dofs_per_cell)),
   fe_mask(mask.size() ? mask :
           ComponentMask(fe->get_nonzero_components(0).size(), true)),
   fe_to_real(fe_mask.size(), numbers::invalid_unsigned_int)
@@ -81,8 +83,6 @@ MappingFEField<dim,spacedim,VECTOR,DH>::MappingFEField (const DH      &euler_dof
         fe_to_real[i] = size++;
     }
   AssertDimension(size,spacedim);
-  local_dofs.get().resize(fe->dofs_per_cell);
-  dof_indices.get().resize(fe->dofs_per_cell);
 }
 
 
@@ -92,12 +92,11 @@ MappingFEField<dim,spacedim,VECTOR,DH>::MappingFEField (const MappingFEField<dim
   euler_vector(mapping.euler_vector),
   fe(mapping.fe),
   euler_dof_handler(mapping.euler_dof_handler),
+  local_dofs(std::vector<double>(fe->dofs_per_cell)),
+  dof_indices(std::vector<types::global_dof_index>(fe->dofs_per_cell)),
   fe_mask(mapping.fe_mask),
   fe_to_real(mapping.fe_to_real)
-{
-  local_dofs.get().resize(fe->dofs_per_cell);
-  dof_indices.get().resize(fe->dofs_per_cell);
-}
+{}
 
 
 template<int dim, int spacedim, class VECTOR, class DH>

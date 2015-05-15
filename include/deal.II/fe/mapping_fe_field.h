@@ -582,6 +582,11 @@ protected:
 
 private:
   /**
+   * Update internal degrees of freedom.
+   */
+  void update_internal_dofs(const typename Triangulation<dim,spacedim>::cell_iterator &cell) const;
+
+  /**
    * Typedef holding the local cell_dofs.
    */
   typedef
@@ -592,12 +597,6 @@ private:
   */
   typedef
   Threads::ThreadLocalStorage <std::vector<types::global_dof_index> > local_dof_indices_t;
-
-  /**
-   * Update internal degrees of
-   * freedom. */
-  void update_internal_dofs(const typename Triangulation<dim,spacedim>::cell_iterator &cell) const;
-
 
   /**
    * It stores the local degrees of freedom of the DH for each cell
