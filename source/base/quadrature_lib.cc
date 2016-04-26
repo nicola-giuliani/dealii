@@ -931,6 +931,47 @@ QGaussOneOverR<2>::QGaussOneOverR(const unsigned int n,
 }
 
 
+
+template<int dim>
+QTanhSinh<dim>::QTanhSinh(unsigned int n, const Point<dim> &singularity)
+        :
+     /**
+      * We need the explicit implementation if dim == 1. If dim > 1 we use the
+      * former implementation and apply a tensorial product to obtain the higher
+      * dimensions.
+      **/
+        Quadrature<dim>(
+          dim == 2 ?
+          QAnisotropic<dim>(
+            QTanhSinh<1>(n, Point<1>(singularity[0])),
+            QTanhSinh<1>(n, Point<1>(singularity[1]))) :
+          dim == 3 ?
+          QAnisotropic<dim>(
+            QTanhSinh<1>(n, Point<1>(singularity[0])),
+            QTanhSinh<1>(n, Point<1>(singularity[1])),
+            QTanhSinh<1>(n, Point<1>(singularity[2]))) :
+          Quadrature<dim>())
+{}
+
+
+template<>
+QTanhSinh<1>::QTanhSinh(const unsigned int n, const Point<1> &singularity) {
+    double eps=1e-8;
+    bool on_vertex=
+            abs(singularity[0]) < eps ||
+            abs(singularity[0]-1) < eps;
+    if(on_vertex == true) {
+        // Construct the actual quadrature formula
+        double h = 1./(n+1);
+        std::vector<Point<1> > q(n);
+        std::vector<double> w(n);
+        for(unsigned int i=0; i<n; ++i) {
+            double k = (double) i/(n+1);
+            q[i][0] = std::tanh(.5*std::sinh(k));
+        }
+    }
+}
+
 template <int dim>
 QSorted<dim>::QSorted(Quadrature<dim> quad) :
   Quadrature<dim>(quad.size())

@@ -423,6 +423,53 @@ private:
 
 
 /**
+ * Tanh-sinh quadrature. This quadrature was introduced by Hidetosi Takahasi
+ * and Masatake Mori in 1974. It uses hyperbolic functions in the change of variables
+ * $x = \tanh(\tfrac12 \pi \sinh t)$ to transform an integral on the interval
+ * $x \in (−1, +1)$ to an integral on the entire real line $t \in (-\infty,|\infty)$.
+ *
+ * After this transformation, the integrand decays with a double exponential rate,
+ * and thus, this method is also known as the double exponential (DE) quadrature
+ * formula.
+ *
+ * For a given number of quadrature points $n$, and step $h=1/(n+1)$, the one
+ * dimensional version of this
+ * quadrature formula is given by the quadrature points with abscissas
+ * $x_k = \tanh(\tfrac12 \pi \sinh kh)$ and weights
+ * $w_k = \frac{\tfrac12 h \pi \cosh kh}{\cosh^2(\tfrac12 \pi \sinh kh)}$.
+ *
+ * Like QGauss quadrature formulas, QTanhSinh is well suited for arbitrary-precision
+ * integration, where an accuracy of hundreds or even thousands of digits is desired.
+ * The rate of convergence is exponential (in the discretization sense) for sufficiently
+ * well-behaved integrands: doubling the number of evaluation points roughly doubles the
+ * number of correct digits.
+ *
+ * Tanh-sinh quadrature is less efficient than Gaussian quadrature for smooth integrands,
+ * but unlike Gaussian quadrature tends to work equally well with integrands having
+ * singularities or infinite derivatives at one or both endpoints of the integration
+ * interval.
+ *
+ * @author Luca Heltai, 2016
+ */
+template <int dim>
+class QTanhSinh : public Quadrature<dim>
+{
+public:
+  /**
+   * The constructor takes two arguments: the number of quadrature points on each
+   * direction per each subinterval, and a Point in the reference element
+   * where a singularity is located. The constructed formula is a piecewise
+   * combination of a standard QTanhSinh formulas, capable of integrating
+   * singularities located on the given Point. If the point is omitted, the
+   * standard formula is constructed which integrates singularities on the
+   * corners.
+   */
+  QTanhSinh(const unsigned int n, const Point<dim> &singularity=Point<dim>());
+};
+
+
+
+/**
  * Sorted Quadrature. Given an arbitrary quadrature formula, this class
  * generates a quadrature formula where the quadrature points are ordered
  * according the weights, from those with smaller corresponding weight, to
@@ -667,7 +714,7 @@ template <> QGaussLog<1>::QGaussLog (const unsigned int n, const bool revert);
 template <> QGaussLogR<1>::QGaussLogR (const unsigned int n, const Point<1> x0, const double alpha, const bool flag);
 template <> QGaussOneOverR<2>::QGaussOneOverR (const unsigned int n, const unsigned int index, const bool flag);
 template <> QTelles<1>::QTelles(const Quadrature<1> &base_quad, const Point<1> &singularity);
-
+template <> QTanhSinh<1>::QTanhSinh(const unsigned int n, const Point<1> &singularity);
 
 
 DEAL_II_NAMESPACE_CLOSE
