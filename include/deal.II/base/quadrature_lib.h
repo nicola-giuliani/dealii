@@ -526,6 +526,83 @@ public:
 
 };
 
+
+/**
+ * Monegato quadrature of arbitrary order.
+ *
+ * The coefficients of these quadrature rules are computed using a non linear
+ * change of variables starting from a standard quadrature formula. This
+ * is done using a polynomial of order $p$, $n = a_p x^p + \dots + a_0$ in order to
+ * integrate a singular integral, with singularity at a given point x_0. If we select a cubic polynomial the quadrature formula coincides with Telles'.
+ *
+ * We start from a Gauss Quadrature Formula with arbitrary function. Then we
+ * apply the cubic variable change. In the paper, J.C.F.Telles:A Self-Adaptive
+ * Co-ordinate Transformation For Efficient Numerical Evaluation of General
+ * Boundary Element Integrals. International Journal for Numerical Methods in
+ * Engineering, vol 24, pages 959–973. year 1987, the author applies the
+ * transformation on the reference cell $[-1, 1]$ getting
+ * @f{align*}{
+ * n(1) &= 1, \\ n(-1) &= -1, \\ \frac{dn}{dx} &= 0 \text{ at }
+ * x = x_0, \\ \frac{d^2n}{dx^2} &= 0 \text{ at  } x = x_0
+ * @f}
+ * We get
+ * @f{align*}{
+ * a &= \frac{1}{q}, \\
+ * b &= -3 \frac{\bar{\Gamma}}{q}, \\
+ * c &= 3 \frac{\bar{\Gamma}}{q}, \\
+ * d &= -b,
+ * @f}
+ * with
+ * @f{align*}{
+ * \eta^{*} &= \bar{\eta}^2 - 1, \\
+ * \bar{\Gamma}  &= \sqrt[3]{\bar{\eta} \eta^{*} + |\eta^{*} | }
+ *                  + \sqrt[3]{ \bar{\eta} \eta^{*} - |\eta^{*} | }
+ *                  + \bar{\eta}, \\
+ * q &= (\Gamma-\bar{\Gamma})^3 + \bar{\Gamma}
+ *      \frac{\bar{\Gamma}^2+3}{1+3\bar{\Gamma}^2}
+ * @f}
+ * Since the library assumes $[0,1]$ as reference interval, we will map these
+ * values on the proper reference interval in the implementation.
+ *
+ * This variable change can be used to integrate singular integrals. One
+ * example is $f(x)/|x-x_0|$ on the reference interval $[0,1]$, where $x_0$ is
+ * given at construction time, and is the location of the singularity $x_0$,
+ * and $f(x)$ is a smooth non singular function.
+ *
+ * Singular quadrature formula are rather expensive, nevertheless Telles'
+ * quadrature formula are much easier to compute with respect to other
+ * singular integration techniques as Lachat-Watson.
+ *
+ * We have implemented the case for $dim = 1$. When we deal the case $dim >1$
+ * we have computed the quadrature formula has a tensorial product of one
+ * dimensional Telles' quadrature formulas considering the different
+ * components of the singularity.
+ *
+ * The weights and functions for Gauss Legendre formula have been tabulated up
+ * to order 12.
+ *
+ * @author Nicola Giuliani 2017
+ */
+template <int dim>
+class QMonegato: public Quadrature<dim>
+{
+public:
+  /**
+   * A constructor that takes a quadrature formula, the singular point, and the order of the variable change as
+   * argument. The quadrature formula will be mapped using Monegato's rule. Make
+   * sure that the order of the quadrature rule is appropriate for the
+   * singularity in question.
+   */
+  QMonegato (const Quadrature<1> &base_quad, const Point<dim> &singularity, const unsigned int change_order);
+  /**
+   * A variant of above constructor that takes as parameters the quadrature order @p n,
+   * the location of the singularity, and the order of the variable change. A Gauss Legendre quadrature of order n
+   * will be used as base quadrature rule.
+   */
+  QMonegato (const unsigned int n, const Point<dim> &singularity, const unsigned int order);
+
+};
+
 /**
  * Gauss-Chebyshev quadrature rules integrate the weighted product
  * $\int_{-1}^1 f(x) w(x) dx$ with weight given by: $w(x) = 1/\sqrt{1-x^2}$.
