@@ -1131,6 +1131,199 @@ QTelles<1>::QTelles (
     }
 }
 
+template <int dim>
+QMonegato<dim>::QMonegato (
+  const unsigned int n, const Point<dim> &singularity, const unsigned int order)
+  :
+/**
+* In this case we map the standard Gauss Legendre formula using the given
+* singularity point coordinates.
+**/
+  Quadrature<dim>(QMonegato<dim>(QGauss<1>(n), singularity, order))
+{}
+
+template <>
+QMonegato<1>::QMonegato (
+  const Quadrature<1> &base_quad, const Point<1> &singularity, const unsigned int order)
+  :
+/**
+* We explicitly implement Monegato's variable change if dim == 1.
+**/
+  Quadrature<1>(base_quad)
+{
+  AssertThrow(order > 0, ExcMessage("The order of the variable change must be positive"));
+  AssertThrow(order%2 == 1, ExcMessage("The order of the variable change must be odd"));
+  double q = order;
+  // The original algorithm is designed for a quadrature interval [-1,1].
+  for(unsigned int i = 0; i<quadrature_points.size(); ++i)
+  {
+    quadrature_points[i][0] = (quadrature_points[i][0]-0.5) * 2.;
+    weights[i] *= 2.;
+  }
+  std::vector<Point<1, long double> > quadrature_points_dummy(quadrature_points.size());
+  std::vector<Point<1, long double> > quadrature_points_dummy_2(quadrature_points.size());
+  std::vector<double> weights_dummy(weights.size());
+  double s0 = (singularity[0] - 0.5) * 2.;
+  unsigned int cont = 0;
+  const double tol = 1e-10;
+  for (unsigned int d = 0; d < quadrature_points.size(); ++d)
+    {
+      if (std::abs(quadrature_points[d][0] - s0) > tol)
+        {
+          quadrature_points_dummy[d-cont][0] = quadrature_points[d][0];
+          quadrature_points_dummy_2[d-cont][0] = quadrature_points[d][0];
+          weights_dummy[d-cont] = weights[d];
+        }
+      else
+        {
+          cont = 1;
+        }
+
+    }
+
+  if (cont == 1)
+    {
+      quadrature_points.resize(quadrature_points_dummy.size()-1);
+      quadrature_points_dummy_2.resize(quadrature_points_dummy.size()-1);
+      weights.resize(weights_dummy.size()-1);
+      for (unsigned int d = 0; d < quadrature_points.size(); ++d)
+        {
+          quadrature_points_dummy_2[d] = quadrature_points_dummy[d];
+          weights[d] = weights_dummy[d];
+        }
+    }
+  double delta = std::pow(2.,-q) * std::pow(std::pow((1+s0),1./q)+std::pow((1-s0),1./q),q);
+  double t0 = (std::pow((1.+s0),1./q)-std::pow((1.-s0),1./q))/(std::pow((1.+s0),1./q)+std::pow((1.-s0),1./q));
+  double t, J;
+  for (unsigned int d = 0; d < quadrature_points.size(); ++d)
+  {
+    t = quadrature_points_dummy_2[d][0];
+    // std::cout<<d<<" ";
+    quadrature_points_dummy_2[d][0] = s0 + delta * std::pow((t-t0), q);
+    std::cout<<t<<" "<<t0<<" "<<delta<<" "<<std::pow((t-t0), q)<<" "<<delta * std::pow((t-t0), q)<<std::endl;
+    J = delta * q * std::pow((t-t0), -1.+q);
+    weights[d] *= J;
+  }
+  // std::cout<<std::endl;
+  // for (unsigned int d = 0; d < size(); ++d)
+  //   std::cout<<quadrature_points[d][0]<<" "<<weights[d]<<std::endl;
+
+  for (unsigned int d = 0; d < size(); ++d)
+  {
+      quadrature_points[d][0] = quadrature_points_dummy_2[d][0]*0.5+0.5;
+      weights[d] *= .5;
+  }
+
+}
+
+template<>
+unsigned int QMonegatoOnBoundary<2>::quad_size(const Point<2> singularity,
+                                          const unsigned int n)
+{
+  double eps=1e-8;
+  bool on_edge=false;
+  bool on_vertex=false;
+  for (unsigned int i=0; i<2; ++i)
+    if ( ( std::abs(singularity[i]  ) < eps ) ||
+         ( std::abs(singularity[i]-1) < eps ) )
+      on_edge = true;
+  if (on_edge && (std::abs( (singularity-Point<2>(.5, .5)).norm_square()-.5)
+                  < eps) )
+    on_vertex = true;
+  if (on_vertex) return (n*n);
+  if (on_edge) return (2*n*n);
+  return (4*n*n);
+}
+
+template<>
+QMonegatoOnBoundary<1>::QMonegatoOnBoundary(const unsigned int n,
+                                  const Point<1> &singularity,
+                                  const unsigned int order) :
+  Quadrature<1>(n)
+{
+  QMonegato<1> telly(n, singularity, order);
+  quadrature_points.resize(telly.size());
+  weights.resize(telly.size());
+  for(unsigned int i = 0; i<telly.size(); ++i)
+  {
+    quadrature_points[i] = telly.point(i);
+    weights[i] = telly.weight(i);
+  }
+}
+template<>
+QMonegatoOnBoundary<2>::QMonegatoOnBoundary(const unsigned int n,
+                                  const Point<2> &singularity,
+                                  const unsigned int order) :
+  Quadrature<2>(quad_size(singularity, n))
+{
+  // We treat all the cases in the
+  // same way. Split the element in 4
+  // pieces, measure the area, if
+  // it's relevant, add the
+  // quadrature connected to that
+  // singularity.
+  std::vector<QMonegato<2> > quads;
+  std::vector<Point<2> > origins;
+  // Id of the corner with a
+  // singularity
+  Point<2> p3(1.,1.),p1(1.,0.),p2(0.,1.),p0(0.,0.);
+
+
+  quads.push_back(QMonegato<2> (n, p3, order));
+  quads.push_back(QMonegato<2> (n, p2, order));
+  quads.push_back(QMonegato<2> (n, p1, order));
+  quads.push_back(QMonegato<2> (n, p0, order));
+
+  origins.push_back(Point<2>(0.,0.));
+  origins.push_back(Point<2>(singularity[0],0.));
+  origins.push_back(Point<2>(0.,singularity[1]));
+  origins.push_back(singularity);
+
+  // Lexicographical ordering.
+
+  double eps = 1e-8;
+  unsigned int q_id = 0; // Current quad point index.
+  Tensor<1,2> dist;
+
+  for (unsigned int box=0; box<4; ++box)
+    {
+      dist = (singularity-GeometryInfo<2>::unit_cell_vertex(box));
+      dist = Point<2>(std::abs(dist[0]), std::abs(dist[1]));
+      double area = dist[0]*dist[1];
+      if (area > eps)
+        for (unsigned int q=0; q<quads[box].size(); ++q, ++q_id)
+          {
+            const Point<2> &qp = quads[box].point(q);
+            this->quadrature_points[q_id] =
+              origins[box]+
+              Point<2>(dist[0]*qp[0], dist[1]*qp[1]);
+            this->weights[q_id] = quads[box].weight(q)*area;
+          }
+    }
+}
+
+template <int dim>
+QMonegato<dim>::QMonegato (
+  const Quadrature<1> &base_quad, const Point<dim> &singularity, const unsigned int order)
+  :
+/**
+* We need the explicit implementation if dim == 1. If dim > 1 we use the
+* former implementation and apply a tensorial product to obtain the higher
+* dimensions.
+**/
+  Quadrature<dim>(
+    dim == 2 ?
+    QAnisotropic<dim>(
+      QMonegato<1>(base_quad, Point<1>(singularity[0]), order),
+      QMonegato<1>(base_quad, Point<1>(singularity[1]), order)) :
+    dim == 3 ?
+    QAnisotropic<dim>(
+      QMonegato<1>(base_quad, Point<1>(singularity[0]), order),
+      QMonegato<1>(base_quad, Point<1>(singularity[1]), order),
+      QMonegato<1>(base_quad, Point<1>(singularity[2]), order)) :
+    Quadrature<dim>())
+{}
+
 
 
 template <>

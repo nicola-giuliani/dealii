@@ -532,34 +532,22 @@ public:
  *
  * The coefficients of these quadrature rules are computed using a non linear
  * change of variables starting from a standard quadrature formula. This
- * is done using a polynomial of order $p$, $n = a_p x^p + \dots + a_0$ in order to
+ * is done using a polynomial of order $p$, $s = a_p x^p + \dots + a_0$ in order to
  * integrate a singular integral, with singularity at a given point x_0. If we select a cubic polynomial the quadrature formula coincides with Telles'.
  *
- * We start from a Gauss Quadrature Formula with arbitrary function. Then we
- * apply the cubic variable change. In the paper, J.C.F.Telles:A Self-Adaptive
- * Co-ordinate Transformation For Efficient Numerical Evaluation of General
- * Boundary Element Integrals. International Journal for Numerical Methods in
- * Engineering, vol 24, pages 959–973. year 1987, the author applies the
+ * We start from an arbitrary  Quadrature Formula. Then we
+ * apply a  variable change. In the paper, Johnston and Elliott:A generalisation of Telles' method for evaluating weakly singular boundary element integrals. Journal of Computational and Applied Mathematics, vol 131, year 2001, pages 223-241., the authors apply the
  * transformation on the reference cell $[-1, 1]$ getting
  * @f{align*}{
- * n(1) &= 1, \\ n(-1) &= -1, \\ \frac{dn}{dx} &= 0 \text{ at }
- * x = x_0, \\ \frac{d^2n}{dx^2} &= 0 \text{ at  } x = x_0
- * @f}
+ * s(1) &= 1, \\ s(-1) &= -1, \\ \frac{dn}{dx} &= 0 \text{ at }
+ * x = x_0, \\ \frac{d^2s}{dx^2} &= 0 \text{ at  } x = x_0 \\ \dots\\ \frac{d^{p-1}s}{dx^{p-1}} &= 0 \text{ at  } x = x_0
+ * @f}, where $p$ is the order of the polynomial $s$.
  * We get
  * @f{align*}{
- * a &= \frac{1}{q}, \\
- * b &= -3 \frac{\bar{\Gamma}}{q}, \\
- * c &= 3 \frac{\bar{\Gamma}}{q}, \\
- * d &= -b,
- * @f}
- * with
- * @f{align*}{
- * \eta^{*} &= \bar{\eta}^2 - 1, \\
- * \bar{\Gamma}  &= \sqrt[3]{\bar{\eta} \eta^{*} + |\eta^{*} | }
- *                  + \sqrt[3]{ \bar{\eta} \eta^{*} - |\eta^{*} | }
- *                  + \bar{\eta}, \\
- * q &= (\Gamma-\bar{\Gamma})^3 + \bar{\Gamma}
- *      \frac{\bar{\Gamma}^2+3}{1+3\bar{\Gamma}^2}
+ * s &= \gamma_p(t)= s_0 + \delta(s_0,p) (t-t_0)^p\\
+ * \delta &= 2^{-p} ((1+s_0)^{1/p}+(1-s_0)^{1/p})^p \\
+ * t_0 &= \frac{(1+s_0)^{1/p}-(1-s_0)^{1/p}}{(1+s_0)^{1/p}+(1-s_0)^{1/p}}, \\
+ * J(t) &= \frac{\partial s}{\partial t} = \delta(s_0,p) p (t-t_0)^{p-1} . \\
  * @f}
  * Since the library assumes $[0,1]$ as reference interval, we will map these
  * values on the proper reference interval in the implementation.
@@ -569,13 +557,13 @@ public:
  * given at construction time, and is the location of the singularity $x_0$,
  * and $f(x)$ is a smooth non singular function.
  *
- * Singular quadrature formula are rather expensive, nevertheless Telles'
- * quadrature formula are much easier to compute with respect to other
+ * Singular quadrature formula are rather expensive, nevertheless Monegato's
+ * quadrature formula, as Telles' one, are much easier to compute with respect to other
  * singular integration techniques as Lachat-Watson.
  *
  * We have implemented the case for $dim = 1$. When we deal the case $dim >1$
  * we have computed the quadrature formula has a tensorial product of one
- * dimensional Telles' quadrature formulas considering the different
+ * dimensional Monegato's quadrature formulas considering the different
  * components of the singularity.
  *
  * The weights and functions for Gauss Legendre formula have been tabulated up
@@ -583,6 +571,7 @@ public:
  *
  * @author Nicola Giuliani 2017
  */
+ 
 template <int dim>
 class QMonegato: public Quadrature<dim>
 {
