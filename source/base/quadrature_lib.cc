@@ -1151,8 +1151,9 @@ QMonegato<1>::QMonegato (
 **/
   Quadrature<1>(base_quad)
 {
-  AssertThrow(order > 0, ExcMessage("The order of the variable change must be positive"));
-  AssertThrow(order%2 == 1, ExcMessage("The order of the variable change must be odd"));
+  Assert(order > 0, ExcMessage("The order of the variable change must be positive"));
+  Assert(order%2 == 1, ExcMessage("The order of the variable change must be odd"));
+  Assert(order > 5, ExcMessage("Order too high"))
   double q = order;
   // The original algorithm is designed for a quadrature interval [-1,1].
   for(unsigned int i = 0; i<quadrature_points.size(); ++i)
@@ -1160,8 +1161,7 @@ QMonegato<1>::QMonegato (
     quadrature_points[i][0] = (quadrature_points[i][0]-0.5) * 2.;
     weights[i] *= 2.;
   }
-  std::vector<Point<1, long double> > quadrature_points_dummy(quadrature_points.size());
-  std::vector<Point<1, long double> > quadrature_points_dummy_2(quadrature_points.size());
+  std::vector<Point<1,double> > quadrature_points_dummy(quadrature_points.size());
   std::vector<double> weights_dummy(weights.size());
   double s0 = (singularity[0] - 0.5) * 2.;
   unsigned int cont = 0;
@@ -1171,7 +1171,6 @@ QMonegato<1>::QMonegato (
       if (std::abs(quadrature_points[d][0] - s0) > tol)
         {
           quadrature_points_dummy[d-cont][0] = quadrature_points[d][0];
-          quadrature_points_dummy_2[d-cont][0] = quadrature_points[d][0];
           weights_dummy[d-cont] = weights[d];
         }
       else
@@ -1184,11 +1183,10 @@ QMonegato<1>::QMonegato (
   if (cont == 1)
     {
       quadrature_points.resize(quadrature_points_dummy.size()-1);
-      quadrature_points_dummy_2.resize(quadrature_points_dummy.size()-1);
       weights.resize(weights_dummy.size()-1);
       for (unsigned int d = 0; d < quadrature_points.size(); ++d)
         {
-          quadrature_points_dummy_2[d] = quadrature_points_dummy[d];
+          quadrature_points[d] = quadrature_points_dummy[d];
           weights[d] = weights_dummy[d];
         }
     }
@@ -1197,21 +1195,11 @@ QMonegato<1>::QMonegato (
   double t, J;
   for (unsigned int d = 0; d < quadrature_points.size(); ++d)
   {
-    t = quadrature_points_dummy_2[d][0];
-    // std::cout<<d<<" ";
-    quadrature_points_dummy_2[d][0] = s0 + delta * std::pow((t-t0), q);
-    std::cout<<t<<" "<<t0<<" "<<delta<<" "<<std::pow((t-t0), q)<<" "<<delta * std::pow((t-t0), q)<<std::endl;
+    t = quadrature_points[d][0];
+    // With order > 5 we have nodes mapped in the singularity (round off errors)
+    quadrature_points[d][0] = (s0 + delta * std::pow((t-t0), q))*0.5+0.5;
     J = delta * q * std::pow((t-t0), -1.+q);
-    weights[d] *= J;
-  }
-  // std::cout<<std::endl;
-  // for (unsigned int d = 0; d < size(); ++d)
-  //   std::cout<<quadrature_points[d][0]<<" "<<weights[d]<<std::endl;
-
-  for (unsigned int d = 0; d < size(); ++d)
-  {
-      quadrature_points[d][0] = quadrature_points_dummy_2[d][0]*0.5+0.5;
-      weights[d] *= .5;
+    weights[d] *= J * 0.5;
   }
 
 }
@@ -1563,6 +1551,10 @@ template class QSorted<3>;
 template class QTelles<1> ;
 template class QTelles<2> ;
 template class QTelles<3> ;
+
+template class QMonegato<1> ;
+template class QMonegato<2> ;
+template class QMonegato<3> ;
 
 template class QGaussChebyshev<1>;
 template class QGaussChebyshev<2>;

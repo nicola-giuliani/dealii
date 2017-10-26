@@ -571,7 +571,7 @@ public:
  *
  * @author Nicola Giuliani 2017
  */
- 
+
 template <int dim>
 class QMonegato: public Quadrature<dim>
 {
@@ -592,6 +592,32 @@ public:
 
 };
 
+
+/**
+ * Monegato quadrature of arbitrary order to keep the singularity on the boundary.
+ *
+ * We compute a quadrature formula that exploit different QMonegato quadratures (up to 4 if dim==2) that are built considering the singularity on the boundary. In such a case the quadrature formula is more accurate as reported in the paper, Johnston and Elliott:A generalisation of Telles' method for evaluating weakly singular boundary element integrals. Journal of Computational and Applied Mathematics, vol 131, year 2001, pages 223-241.
+ * We use the same strategy implemented in QGaussOneOverR to combine the different quadrature schemes.
+ *
+ * @author Nicola Giuliani 2017
+ */
+
+template <int dim>
+class QMonegatoOnBoundary: public Quadrature<dim>
+{
+public:
+  /**
+   * A constructor that takes as parameters the quadrature order @p n,
+   * the location of the singularity, and the order of the variable change. A Gauss Legendre quadrature of order n
+   * will be used as base quadrature rule.
+   */
+  QMonegatoOnBoundary (const unsigned int n, const Point<dim> &singularity, const unsigned int order);
+
+private:
+
+  unsigned int quad_size(const Point<2> singularity, const unsigned int n);
+
+};
 /**
  * Gauss-Chebyshev quadrature rules integrate the weighted product
  * $\int_{-1}^1 f(x) w(x) dx$ with weight given by: $w(x) = 1/\sqrt{1-x^2}$.
