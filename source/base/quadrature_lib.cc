@@ -1434,6 +1434,39 @@ QTrianglePolar::QTrianglePolar(const unsigned int &n)
 
 
 
+QLachatWatson::QLachatWatson(const Quadrature<1> &radial_quadrature,
+                             const Quadrature<1> &angular_quadrature) :
+  QSimplex<2>(Quadrature<2>())
+{
+  QAnisotropic<2> base(radial_quadrature, angular_quadrature);
+  this->quadrature_points.resize(base.size());
+  this->weights.resize(base.size());
+  for (unsigned int i=0; i<base.size(); ++i)
+    {
+      const auto &q = base.point(i);
+      const auto &w = base.weight(i);
+
+      const auto &xhat = q[0];
+      const auto &yhat = q[1];
+
+      const double x = xhat*(1-yhat);
+      const double y = xhat*yhat;
+
+      const double J = xhat;
+
+      this->quadrature_points[i] = Point<2>(x,y);
+      this->weights[i] = w*J;
+    }
+}
+
+
+
+QLachatWatson::QLachatWatson(const unsigned int &n)
+  :QLachatWatson(QGauss<1>(n),QGauss<1>(n))
+{}
+
+
+
 template<int dim>
 QSplit<dim>::QSplit(const QSimplex<dim> &base,
                     const Point<dim> &split_point)

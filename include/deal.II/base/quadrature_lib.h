@@ -747,6 +747,66 @@ public:
 };
 
 /**
+ * A quadrature that implements the Lachat-Watson transformation from a
+ * square to a triangle to integrate singularities in the origin of the
+ * reference simplex.
+ *
+ * The Lachat-Watson transformation is defined as
+ * \f[
+ * \begin{pmatrix}
+ * x\\
+ * y
+ * \end{pmatrix}
+ * =
+ * \begin{pmatrix}
+ * \hat x(1-\hat y)\\
+ * \hat x \hat y
+ * \end{pmatrix}
+ * \f]
+ * with determinant of the Jacobian equal to $J = \hat x$. Such
+ * transformation maps the reference square $[0,1]\times[0,1]$ to the
+ * reference simplex, by collapsing the left side of the square, and
+ * shearing the resulting triangle to the reference one. This
+ * transformation allows one integrate singularities of order $1/R$
+ * in the origin.
+ *
+ * @author Luca Heltai, 2017.
+ */
+class  QLachatWatson: public QSimplex<2>
+{
+public:
+  /**
+   * Constructor that allows the specificatino of different quadrature rules
+   * along the "radial" and "angular" directions.
+   *
+   * Since this quadrature is not based on a Polar change of coordinates, it
+   * is not fully proper to talk about radial and angular directions. However,
+   * the effect of the Lachat-Watson transformation is similar to a polar change
+   * of coordinates, since the resulting quadrature points are aligned radially
+   * with respect to the singularity.
+   *
+   * This quadrature formula is cheaper to compute than the QTrianglePolar and
+   * it is slightly less efficient on $1/R$ type singularities, however it
+   * behaves better on non-singular arguments, making it somewhat more
+   * flexible, if you want to integrate both singular and non-singular
+   * functions.
+   *
+   * @param radial_quadrature Base quadrature to use in the radial direction
+   * @param angular_quadrature Base quadrature to use in the angular direction
+   */
+  QLachatWatson(const Quadrature<1> &radial_quadrature,
+                const Quadrature<1> &angular_quadrature);
+
+  /**
+   * Calls the above constructor with QGauss<1>(n) quadrature formulas for
+   * both the radial and angular quadratures.
+   *
+   * @param n
+   */
+  QLachatWatson(const unsigned int &n);
+};
+
+/**
  * A quadrature to use when the cell should be split in subregions to integrate
  * using one or more base quadratures.
  *
