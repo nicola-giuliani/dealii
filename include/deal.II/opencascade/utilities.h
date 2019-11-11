@@ -148,15 +148,20 @@ namespace OpenCASCADE
    * `angular_deflection` select the accuracy of the created triangulation with
    * respect to the orginal topological shape. The argument
    * `sew_different_faces` gives the possibility to use a Sewer from OpenCASCADE
-   * to create a watertight closed STL using the argument `sewer_tolerance`.
+   * to create a watertight closed STL using the argument `sewer_tolerance`. The
+   * argument `is_relative` specifies if distance are relative and `in_parallel`
+   * if the execution should be in parallel.
    */
   void
   write_STL(const TopoDS_Shape &shape,
             const std::string & filename,
             const double        deflection,
-            const double        angular_deflection,
             const bool          sew_different_faces = false,
-            const double        sewer_tolerance     = 1e-6);
+            const double        sewer_tolerance     = 1e-6,
+            const bool          is_relative         = false,
+            const double        angular_deflection  = 0.5,
+            const bool          in_parallel         = false);
+
 
   /**
    * Read STEP files and translate their content into openCascade topological

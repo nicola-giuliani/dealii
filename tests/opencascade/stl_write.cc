@@ -31,7 +31,7 @@ int
 main()
 {
   TopoDS_Shape sh = read_STL(SOURCE_DIR "/stl_files/sphere_refined.stl");
-  write_STL(sh, "tmp.stl", 0.001, 0.001);
+  write_STL(sh, "tmp.stl", 0.001, false, 1e-6, false, 0.001, false);
   std::ifstream in("tmp.stl");
   std::ofstream out("output");
   std::string   line;

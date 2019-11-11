@@ -32,7 +32,7 @@ main()
   const std::string closed_iges       = SOURCE_DIR "/iges_files/wing.iges";
   const std::string output_closed_stl = "output";
   auto              shape_fuse = OpenCASCADE::read_IGES(closed_iges, 1e-2);
-  write_STL(shape_fuse, output_closed_stl, 0.1, 0.1, true);
+  write_STL(shape_fuse, output_closed_stl, 0.1, true, 1e-6, false, 0.1, false);
 
   return 0;
 }

@@ -52,10 +52,9 @@
 #  include <BRepBuilderAPI_MakeEdge.hxx>
 #  include <BRepBuilderAPI_Sewing.hxx>
 #  include <BRepBuilderAPI_Transform.hxx>
-#  include <BRepMesh_FastDiscret.hxx>
+#  include <BRepMesh_IncrementalMesh.hxx>
 #  include <BRepTools.hxx>
 #  include <BRep_Builder.hxx>
-#  include <Bnd_Box.hxx>
 #  include <GCPnts_AbscissaPoint.hxx>
 #  include <GeomAPI_Interpolate.hxx>
 #  include <GeomAPI_ProjectPointOnCurve.hxx>
@@ -290,9 +289,11 @@ namespace OpenCASCADE
   write_STL(const TopoDS_Shape &shape,
             const std::string & filename,
             const double        deflection,
-            const double        angular_deflection,
             const bool          sew_different_faces,
-            const double        sewer_tolerance)
+            const double        sewer_tolerance,
+            const bool          is_relative,
+            const double        angular_deflection,
+            const bool          in_parallel)
   {
     TopLoc_Location            Loc;
     std::vector<TopoDS_Vertex> vertices;
@@ -319,12 +320,11 @@ namespace OpenCASCADE
           }
         else
           shape_to_be_written = shape;
-        double  x_min, y_min, z_min, x_max, y_max, z_max;
-        Bnd_Box bnd_box;
-        BRepBndLib::Add(shape_to_be_written, bnd_box);
-        bnd_box.Get(x_min, y_min, z_min, x_max, y_max, z_max);
-        BRepMesh_FastDiscret mesh_fd(deflection, angular_deflection, bnd_box);
-        mesh_fd.Perform(shape_to_be_written);
+        BRepMesh_IncrementalMesh mesh_im(shape_to_be_written,
+                                         deflection,
+                                         is_relative,
+                                         angular_deflection,
+                                         in_parallel);
       }
 
     StlAPI_Writer writer;
